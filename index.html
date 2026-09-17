@@ -1,1 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0f4c5c">
+<link rel="manifest" href="manifest.webmanifest">
+<title>MRP Letter Creation</title>
+<style>
+:root{--navy:#0f4c5c;--ink:#173042;--bg:#f4f7f9;--line:#d8e1e7;--card:#fff;--danger:#b42318;--active:#d8a400}
+*{box-sizing:border-box}body{margin:0;font-family:Cambria,Georgia,serif;background:var(--bg);color:var(--ink)}
+header{background:var(--navy);color:white;padding:18px 22px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+header h1{font-size:24px;margin:0}header small{font-family:Arial,sans-serif}
+main{max-width:1250px;margin:20px auto;padding:0 14px}.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:15px}
+button,select,input,textarea{font:inherit}button{border:0;border-radius:6px;padding:10px 14px;background:var(--navy);color:white;cursor:pointer;font-family:Arial,sans-serif}
+button.secondary{background:#607d8b}button.danger{background:var(--danger)}button:disabled{opacity:.5}
+.tabs button.active{background:var(--active);color:var(--ink);font-weight:bold;box-shadow:0 0 0 2px rgba(0,0,0,.08) inset}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px;margin-bottom:15px}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.field{display:flex;flex-direction:column;gap:5px}.field.full{grid-column:1/-1}
+.letter-row1{grid-column:1/-1;display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start}
+.letter-row1 .field{flex:1 1 160px}
+.field.vendor-wide{flex:2 1 260px}
+.field.letter-type-narrow{flex:2 1 200px}
+.field.letter-type-narrow select{width:100%}
+.field.letter-compact{flex:0 0 120px}
+.field.letter-compact input{max-width:120px}
+.field.letter-date-field{flex:0 0 155px}
+.field.letter-date-field input{max-width:155px;min-width:150px}
+label{font:600 13px Arial,sans-serif;color:#415466}input,select,textarea{width:100%;border:1px solid #b9c8d2;border-radius:5px;padding:9px;background:white;color:#172b3a}textarea{min-height:80px;resize:vertical}
+h2{margin:0 0 14px;font-size:20px;color:var(--navy)}h3{color:var(--navy);margin-bottom:8px}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:15px}.hidden{display:none!important}
+.table-wrap{overflow:auto}.data-table{width:100%;border-collapse:collapse;min-width:720px}.data-table th,.data-table td{border:1px solid #b8c5ce;padding:8px;text-align:left;vertical-align:top}.data-table th{background:#eaf1f5;font-weight:bold}.data-table input{min-width:90px}.data-table input.pname{min-width:400px}.data-table input.pack{min-width:140px}
+.data-table input.pack,.data-table input.existing,.data-table input.usp,.data-table input.revised,.data-table input.rusp,.data-table input.mrp{text-align:center}
+.notice{padding:10px 12px;background:#fff6d9;border-left:4px solid #d8a400;margin:12px 0;font:14px Arial,sans-serif}
+.upload-panel{margin-top:12px;border-top:1px solid var(--line);padding-top:12px}
+.opt-row{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:10px}
+.opt-row label{font:13px Arial,sans-serif;color:#172b3a;display:flex;align-items:center;gap:5px;white-space:nowrap;flex-shrink:0}
+.opt-row span.lbl{font:600 13px Arial,sans-serif;color:#415466}
+.checkline{display:flex;align-items:center;gap:6px;font:13px Arial,sans-serif;margin:8px 0}
+#preview{background:white;border:1px solid #b7c3ca;padding:42px;max-width:900px;margin:15px auto;min-height:900px;line-height:1.35}
+.letter-head{text-align:center;font-weight:bold;font-size:20px;text-decoration:underline;margin-bottom:30px}
+.letter-logo-row{text-align:left;margin-bottom:20px}
+.letter-logo{max-height:130px;max-width:300px;object-fit:contain}
+.letter-meta{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px}
+.letter-meta .meta-right{text-align:right}
+.letter-table{width:100%;border-collapse:collapse;margin:20px 0;font-size:14px}.letter-table th,.letter-table td{border:1px solid #222;padding:8px}.letter-table th{background:#f0f0f0}
+.note-text{white-space:pre-line}.signature{margin-top:45px}.signature strong{display:block}
+footer{text-align:center;color:#60717d;font:12px Arial,sans-serif;padding:20px}
+@media(max-width:800px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}#preview{padding:22px;min-height:0}.letter-meta{grid-template-columns:1fr}}
+@media(max-width:480px){.grid{grid-template-columns:1fr}header h1{font-size:20px}main{padding:0 8px}.panel{padding:12px}}
+@media print{body{background:white}header,.tabs,.panel:not(#previewPanel),footer{display:none!important}main{margin:0;padding:0}#previewPanel{border:0;padding:0}#previewPanel h2{display:none!important}#preview{border:0;margin:0;max-width:none;padding:15mm;min-height:0}}
+</style>
+</head>
+<body>
+<header><div><h1>MRP Letter Creation</h1><small>HTML + PWA | Excel workflow conversion</small></div><div id="status">Ready</div></header>
+<main>
+<div class="tabs">
+<button data-tab="letter" class="active">Letter Creation</button><button data-tab="vendors" class="admin-tab hidden">Vendor Master</button><button data-tab="summary" class="admin-tab hidden">Letter Summary</button><button data-tab="masters" class="admin-tab hidden">Language & Signature</button><button id="adminLock" class="secondary">🔒 Admin Access</button>
+</div>
 
+<section id="letter" class="tab">
+<div class="panel">
+<h2>Letter Details</h2>
+<div class="grid">
+<div class="letter-row1">
+<div class="field letter-type-narrow"><label>Letter Type</label><select id="letterType"><option value="R">Revised MRP Letter</option><option value="G">General MRP Letter</option></select></div>
+<div class="field vendor-wide"><label>Vendor</label><select id="vendor"></select></div>
+<div class="field letter-compact"><label>Letter Number</label><input id="letterNo" readonly></div>
+<div class="field letter-date-field"><label>Letter Date</label><input id="letterDate" type="date"></div>
+</div>
+<div class="field full hidden"><label>Vendor Address</label><textarea id="address" readonly></textarea></div>
+<div class="field"><label>Effective Month</label><input id="effectiveMonth" type="month"></div>
+<div class="field"><label>Effective Wording</label><select id="wording"><option value="month">Effective as per Month/Year</option><option value="immediate">Effective Immediately</option></select></div>
+</div>
+</div>
+<div class="panel">
+<h2>Product Details</h2>
+<div class="actions"><button id="addRow">Add Product</button><button class="secondary" id="clearRows">Clear Products</button><button class="secondary" id="massUploadBtn">Mass Upload</button></div>
+<div class="table-wrap"><table class="data-table"><thead id="productHead"></thead><tbody id="productBody"></tbody></table></div>
+<div class="opt-row" style="margin-top:15px;"><span class="lbl">U.S.P.:</span><label><input type="radio" name="uspOpt" id="uspReq" value="1"> Required</label><label><input type="radio" name="uspOpt" id="uspNotReq" value="2"> Not Required</label><button class="secondary" id="calcUspBtn">Calculate USP</button></div>
+<div id="massUploadPanel" class="upload-panel hidden">
+<p class="notice" id="massUploadHint"></p>
+<div class="field full"><textarea id="massUploadText" rows="8" placeholder="Paste rows here, one product per line, columns separated by Tab or comma"></textarea></div>
+<label class="checkline"><input type="checkbox" id="massReplace" checked> Replace existing product rows (uncheck to append)</label>
+<div class="actions"><button id="massUploadImport">Import Rows</button><button class="secondary" id="massUploadCancel">Cancel</button></div>
+</div>
+</div>
+<div class="panel">
+<div class="field hidden"><label>Opening Paragraph</label><textarea id="opening"></textarea></div>
+<div class="field hidden"><label>Notes</label><textarea id="notes"></textarea></div>
+<div class="actions"><button id="previewBtn">Generate Preview</button><button id="printBtn">Print / Save PDF</button><button class="secondary" id="resetBtn">Reset Form</button><button class="danger" id="clearAllBtn">Clear All Data</button></div>
+</div>
+</section>
+
+<section id="vendors" class="tab hidden">
+<div class="panel"><h2>Vendor Master</h2><div class="grid"><div class="field"><label>Vendor Name</label><input id="newVendor"></div><div class="field full"><label>Address</label><textarea id="newAddress"></textarea></div></div><div class="actions"><button id="saveVendor">Save Vendor</button><button class="secondary" id="exportData">Export Data</button><label><button class="secondary" id="importBtn">Import Data</button></label><input id="importFile" type="file" accept=".json" class="hidden"><button class="secondary" id="vendorMassBtn">Mass Upload Vendors</button></div>
+<div id="vendorMassPanel" class="upload-panel hidden">
+<p class="notice">One vendor per block. First line = Vendor Name, following line(s) = Address. Separate each vendor block with a BLANK line.</p>
+<div class="field full"><textarea id="vendorMassText" rows="10" placeholder="M/s Example Pharma Pvt Ltd&#10;123 Industrial Area, City - 100001&#10;Phone: 9999999999&#10;&#10;M/s Another Vendor&#10;Address line 1&#10;Address line 2"></textarea></div>
+<div class="actions"><button id="vendorMassImport">Import Vendors</button><button class="secondary" id="vendorMassCancel">Cancel</button></div>
+</div>
+</div>
+<div class="panel"><div class="table-wrap"><table class="data-table"><thead><tr><th>Vendor</th><th>Address</th><th>Action</th></tr></thead><tbody id="vendorBody"></tbody></table></div></div>
+</section>
+
+<section id="summary" class="tab hidden"><div class="panel"><h2>Approved Letter Number Summary</h2><p class="notice">Numbers are stored locally in this browser. Export your data regularly for backup.</p><div class="table-wrap"><table class="data-table"><thead><tr><th>Letter Number</th><th>Type</th><th>Action</th></tr></thead><tbody id="summaryBody"></tbody></table></div></div></section>
+
+<section id="masters" class="tab hidden"><div class="panel"><h2>Language & Signature Master</h2><div class="grid"><div class="field full"><label>Authorized Person</label><input id="signatory"></div><div class="field"><label>Access Password (Vendor Master / Letter Summary / this tab)</label><input id="appPassword" type="text"></div><div class="field full"><label>Company Logo (shown top-left on the Letter PDF)</label><input type="file" id="logoUpload" accept="image/*"><div style="margin-top:8px;display:flex;align-items:center;gap:12px;"><img id="logoPreviewImg" src="" style="max-height:60px;max-width:160px;display:none;border:1px solid var(--line);padding:4px;background:#fff"><button type="button" class="secondary" id="removeLogo">Remove Logo</button></div><p class="notice">Use a small PNG/JPG (under 500 KB works best). It will appear in the top-left corner of every generated letter and PDF.</p></div><div class="field full"><label>Revised Opening Text (As per Effective Month)</label><textarea id="revisedText"></textarea></div><div class="field full"><label>Revised Opening Text (Immediate Effect)</label><textarea id="revisedImmediateText"></textarea></div><div class="field full"><label>General Opening Text</label><textarea id="generalText"></textarea></div><div class="field full"><label>Revised Notes</label><textarea id="revisedNotes"></textarea></div><div class="field full"><label>General Notes</label><textarea id="generalNotes"></textarea></div></div><div class="actions"><button id="saveMasters">Save Masters</button></div></div></section>
+
+<section id="previewPanel" class="panel hidden"><h2>Letter Preview</h2><div id="preview"></div></section>
+</main><footer>Local-first application. Data remains in your browser unless exported.</footer>
+<script>
+const $=id=>document.getElementById(id);
+const initialVendors=[
+["M/s PROTECH TELELINKS","Vill. Mouza Ogli, Suketi Road, Kala Amb, Sirmour, Himachal Pradesh - 173030\\nPhone No. 7419741020, 8219887094,\\nEmail - admin@protechtelelinks.com"],
+["M/S MAYA BIOTECH PVT. LTD","Village Kondi, P.O. Thana Baddi, Baddi-173205, Himachal Pradesh\\nMobile No. - 7889192340"],
+["M/s APPASAMY OCULAR DEVICES (P) LTD.","Plot no 74D, HPSIC INDUSTRIAL AREA KATHA, BADDI, SOLAN-173205\\nHimachal Pradesh\\nMobile No. - 9318811150"],
+["M/s BIOMAK LABORATORIES PRIVATE LIMITED","Plot No. 57, Industrial Area Sansarpur Terrace, Growth Centre Indus. Area, Kangra-176501, Himachal Pradesh"],
+["M/s EURAMED PHARMA PRIVATE LIMITED","KHASRA NO-520, Dehradun Road, Bhagwanpur, Haridwar - 247661"],
+["M/s GUFIC BIOSCIENCES LTD.","Gufic Biosciences Limited, At Kabilpore, Navsari, Gujarat, 396424"],
+["M/s GMH ORGANIC","Village Kunjhal Jharmajri Baddi, Plot no-05, Solan-173205, Himachal Pradesh"],
+["M/s ASTHA LIFE SCIENCES","Main Murthal Road, Asadpur Sonipat, Sonipat-131001, Haryana"],
+["M/s GOD GRACE HEALTHCARE","# 6, VPO SAHA, Near Bank of Baroda, Shahzadpur Road, Ambala, Haryana-133104"],
+["M/s REBASE LIFESCIENCE PRIVATE LIMITED","Block No.6, Plot No. 11 and 12, Nr. Amrut Dairy, Lalpur, Daskroi, Ahmedabad, Gujarat-382430"],
+["M/s SUPERMAX LABORATORIES","Plot No-40, Pharmacity, Selaqui Industrial Area, Dehradun-248011, Uttarakhand"],
+["M/s MALIK LIFESCIENCES PVT LTD","16, Vardhman Industrial Estate, Roorkee, Bahadarpur Saini, Haridwar-247667, Uttarakhand"],
+["M/s PENAM BIOSCIENCES PVT LTD","Mauza Sarawan, Sadhaura, Yamunanagar, Haryana-133206"],
+["M/s R K LIFE CARE INC","Street No.-7, Reliance Modern Industrial Area, Yakubpur, Jhajjar, Haryana-124103"],
+["M/s SAI TECH MEDICARE PVT. LTD.","Vill Kheri, Trilok Pur Road, Kala Amb, Sirmaur, Himachal Pradesh-173030"]
+];
+let state=JSON.parse(localStorage.getItem("mrpLetterState")||"null")||{
+vendors:initialVendors.map(x=>({name:x[0],address:x[1]})),
+summary:["R0526001","G0526002","G0526003","R0526004","G0626005","G0626006","G0626007","R0626008","R0826009","R0926010","R0926011","G0926012","G0926013"],
+signatory:"Jitu Dutta",
+appPassword:"admin123",
+logoDataUrl:null,
+uspRequired:{R:true,G:true},
+revisedText:"Kindly find herewith the Revised Maximum Retail Price of the following products with effect from the batches manufactured from {MONTH} i.e. with batches having manufacturing date {UPPERMONTH} only and onwards as under:-",
+revisedImmediateText:"Kindly find herewith the Revised Maximum Retail Price of the following product (s) with immediate effect as under:-",
+generalText:"Kindly find herewith the Maximum Retail Price of the following product (s) as under:-",
+revisedNotes:"• You are also requested to check at your end before implementing that such MRP revised is as per the norms prescribed under DPCO for drug formulations.\\n• MRP increase upto 10% is permitted over period of 12 months in case of Non-Scheduled formulations.\\n• MRP can be revised in case of Scheduled formulation under DPCO only as per Wholesale Price Index (WPI) and effective from April every year.\\n• In case of any discrepancy of above Advised Revised MRP, please revert.\\n• Please send us the effective batch number & Mfg. date of the Advised Revised MRP",
+generalNotes:"• Please send us the effective batch number & Mfg. date of the Advised MRP.\\n• Kindly re-confirm the MRP at the time of batch manufacturing.\\n• In case of any query regarding MRP, please feel free to contact us at 9818268770."
+};
+if(!state.uspRequired)state.uspRequired={R:true,G:true};
+if(!state.revisedImmediateText)state.revisedImmediateText="Kindly find herewith the Revised Maximum Retail Price of the following product (s) with immediate effect as under:-";
+if(!state.appPassword)state.appPassword="admin123";
+if(state.logoDataUrl===undefined)state.logoDataUrl=null;
+function save(){localStorage.setItem("mrpLetterState",JSON.stringify(state));}
+function nextNo(type){let year=String(new Date().getFullYear()).slice(-2),month=String(new Date().getMonth()+1).padStart(2,"0");let nums=state.summary.map(x=>+x.slice(5)).filter(Number.isFinite);let n=(Math.max(0,...nums)+1);return type+month+year+String(n).padStart(3,"0")}
+function refreshVendors(){ $("vendor").innerHTML='<option value="">-- Select Vendor --</option>'+state.vendors.map((v,i)=>`<option value="${i}">${esc(v.name)}</option>`).join("");renderVendorTable();updateAddress();}
+function updateAddress(){let v=$("vendor").value;$("address").value=v===""?"":(state.vendors[+v]?.address||"")}
+function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function setupRows(){let revised=$("letterType").value==="R";$("productHead").innerHTML=revised?"<tr><th>Product Name</th><th>Pack Size</th><th>Existing MRP</th><th>U.S.P.</th><th>Revised MRP</th><th>U.S.P.</th><th>Action</th></tr>":"<tr><th>Product Name</th><th>Pack Size</th><th>MRP</th><th>U.S.P.</th><th>Action</th></tr>";if(!$("productBody").children.length)addRow();$("notes").value=revised?state.revisedNotes:state.generalNotes;if(revised)updateOpeningText();else $("opening").value=state.generalText;syncUspToggle();}
+function formatMonthTokens(){let v=$("effectiveMonth").value;if(!v)return{month:"MM.YYYY",upper:"MONTH"};let[y,m]=v.split("-"),d=new Date(+y,+m-1,1);return{month:m.padStart(2,"0")+"."+y,upper:d.toLocaleDateString("en-US",{month:"long"}).toUpperCase()};}
+function updateOpeningText(){if($("letterType").value!=="R")return;if($("wording").value==="immediate"){$("opening").value=state.revisedImmediateText;}else{let{month,upper}=formatMonthTokens();$("opening").value=state.revisedText.replaceAll("{MONTH}",month).replaceAll("{UPPERMONTH}",upper);}}
+function syncUspToggle(){let type=$("letterType").value,req=state.uspRequired[type];$("uspReq").checked=req;$("uspNotReq").checked=!req;}
+function extractQty(text){let num="";for(let i=0;i<text.length;i++){let ch=text[i];if(/[0-9.]/.test(ch))num+=ch;else if(num!=="")break;}return num;}
+function calcUSP(){let type=$("letterType").value,required=state.uspRequired[type];[...$("productBody").rows].forEach(tr=>{let pack=tr.querySelector(".pack").value.trim();if(type==="R"){let uspEl=tr.querySelector(".usp"),ruspEl=tr.querySelector(".rusp");if(pack===""){uspEl.value="";ruspEl.value="";return;}if(!required){uspEl.value="N/A";ruspEl.value="N/A";return;}let numStr=extractQty(pack),qty=numStr===""?1:parseFloat(numStr);if(qty===0)qty=1;let existing=tr.querySelector(".existing").value,revisedV=tr.querySelector(".revised").value;uspEl.value=existing!==""?(parseFloat(existing)/qty).toFixed(2):"";ruspEl.value=revisedV!==""?(parseFloat(revisedV)/qty).toFixed(2):"";}else{let uspEl=tr.querySelector(".usp");if(pack===""){uspEl.value="";return;}if(!required){uspEl.value="N/A";return;}let numStr=extractQty(pack);if(numStr===""){uspEl.value="";return;}let qty=parseFloat(numStr);if(qty===0){uspEl.value="";return;}let mrp=tr.querySelector(".mrp").value,mrpVal=mrp===""?0:parseFloat(mrp);uspEl.value=(mrpVal/qty).toFixed(2);}});}
+function clearAllData(){let type=$("letterType").value;let msg=type==="R"?"This will clear the vendor, letter number, opening paragraph, effective month and all product rows on this sheet. Continue?":"This will clear the vendor, letter number and all product rows on this sheet. Continue?";if(!confirm(msg))return;$("vendor").value="";updateAddress();$("letterNo").value="";if(type==="R"){$("opening").value="";$("effectiveMonth").value="";}$("productBody").innerHTML="";$("previewPanel").classList.add("hidden");alert("Selected data cleared successfully.");}
+function addRow(data={}){let revised=$("letterType").value==="R",tr=document.createElement("tr");tr.innerHTML=revised?`<td><input class="pname" maxlength="500" value="${esc(data.name||"")}"></td><td><input class="pack" maxlength="13" value="${esc(data.pack||"")}"></td><td><input class="existing" type="text" inputmode="decimal" maxlength="9" value="${data.existing??""}"></td><td><input class="usp" maxlength="6" value="${esc(data.usp||"N/A")}"></td><td><input class="revised" type="text" inputmode="decimal" maxlength="9" value="${data.revised??""}"></td><td><input class="rusp" maxlength="6" value="${esc(data.rusp||"N/A")}"></td><td><button class="danger remove">Remove</button></td>`:`<td><input class="pname" maxlength="500" value="${esc(data.name||"")}"></td><td><input class="pack" maxlength="13" value="${esc(data.pack||"")}"></td><td><input class="mrp" type="text" inputmode="decimal" maxlength="9" value="${data.mrp??""}"></td><td><input class="usp" maxlength="6" value="${esc(data.usp||"N/A")}"></td><td><button class="danger remove">Remove</button></td>`;tr.querySelector(".remove").onclick=()=>tr.remove();$("productBody").appendChild(tr);}
+$("productBody").addEventListener("input",e=>{if(e.target.matches(".existing,.revised,.mrp")){let v=e.target.value.replace(/[^0-9.]/g,"");let parts=v.split(".");if(parts.length>2)v=parts[0]+"."+parts.slice(1).join("");if(v.length>9)v=v.slice(0,9);e.target.value=v;}});
+function rows(){return [...$("productBody").rows].map(tr=>{let o={name:tr.querySelector(".pname").value,pack:tr.querySelector(".pack").value,usp:tr.querySelector(".usp").value};if($("letterType").value==="R"){o.existing=tr.querySelector(".existing").value;o.revised=tr.querySelector(".revised").value;o.rusp=tr.querySelector(".rusp").value}else o.mrp=tr.querySelector(".mrp").value;return o;});}
+function renderVendorTable(){$("vendorBody").innerHTML=state.vendors.map((v,i)=>`<tr><td>${esc(v.name)}</td><td class="note-text">${esc(v.address)}</td><td><button data-i="${i}" class="danger delv">Delete</button></td></tr>`).join("");document.querySelectorAll(".delv").forEach(b=>b.onclick=()=>{state.vendors.splice(+b.dataset.i,1);save();refreshVendors();});}
+function renderSummary(){$("summaryBody").innerHTML=state.summary.map((n,i)=>`<tr><td>${esc(n)}</td><td>${n[0]==="R"?"Revised":"General"}</td><td><button class="danger" data-i="${i}">Delete</button></td></tr>`).join("");$("summaryBody").querySelectorAll("button").forEach(b=>b.onclick=()=>{state.summary.splice(+b.dataset.i,1);save();renderSummary();});}
+function preview(){let type=$("letterType").value,{month,upper}=formatMonthTokens();let opening=$("opening").value.replaceAll("{MONTH}",month).replaceAll("{UPPERMONTH}",upper);let r=rows();let head=type==="R"?["Product Name","Pack Size","Existing MRP","U.S.P.","Revised MRP","U.S.P."]:["Product Name","Pack Size","MRP","U.S.P."];let body=r.map(x=>type==="R"?[x.name,x.pack,x.existing,x.usp,x.revised,x.rusp]:[x.name,x.pack,x.mrp,x.usp]);let titleText=type==="R"?"REVISED MAXIMUM RETAIL PRICE":"MAXIMUM RETAIL PRICE";let headHtml=(state.logoDataUrl?`<div class="letter-logo-row"><img class="letter-logo" src="${state.logoDataUrl}"></div>`:"")+`<div class="letter-head">${titleText}</div>`;let dateDMY=formatDMY($("letterDate").value);let html=`${headHtml}<div class="letter-meta"><div><b>To,</b><br>${esc($("vendor").selectedOptions[0]?.text||"")}<br><span class="note-text">${esc($("address").value)}</span></div><div class="meta-right"><b>Letter No:</b> ${esc($("letterNo").value)}<br><b>Letter Date:</b> ${esc(dateDMY)}</div></div><p>${esc(opening)}</p><table class="letter-table"><thead><tr>${head.map(h=>`<th>${esc(h)}</th>`).join("")}</tr></thead><tbody>${body.map(row=>`<tr>${row.map(v=>`<td>${esc(v)}</td>`).join("")}</tr>`).join("")}</tbody></table><p><b>Note:</b></p><p class="note-text">${esc($("notes").value)}</p><div class="signature">For TYYKEM PRIVATE LIMITED<br><br><br><br><b>${esc(state.signatory)}</b><strong>AUTHORISED SIGNATORY</strong></div>`;$("preview").innerHTML=html;$("previewPanel").classList.remove("hidden");$("previewPanel").scrollIntoView({behavior:"smooth"});}
+function formatDMY(iso){if(!iso)return"";let[y,m,d]=iso.split("-");return`${d}/${m}/${y}`;}
+function reset(){ $("letterNo").value=nextNo($("letterType").value);$("letterDate").value=new Date().toISOString().slice(0,10);$("effectiveMonth").value=new Date().toISOString().slice(0,7);$("wording").value="month";$("productBody").innerHTML="";setupRows();$("previewPanel").classList.add("hidden");}
+let adminUnlocked=false;
+function showTab(tab){document.querySelectorAll(".tab").forEach(s=>s.classList.add("hidden"));$(tab).classList.remove("hidden");document.querySelectorAll("[data-tab]").forEach(b=>b.classList.toggle("active",b.dataset.tab===tab));if(tab==="summary")renderSummary();if(tab==="masters")loadMasters();}
+function setAdminLockUI(){$("adminLock").textContent=adminUnlocked?"🔓 Hide Admin Tabs":"🔒 Admin Access";document.querySelectorAll(".admin-tab").forEach(b=>b.classList.toggle("hidden",!adminUnlocked));if(!adminUnlocked)showTab("letter");}
+$("adminLock").onclick=()=>{if(adminUnlocked){adminUnlocked=false;setAdminLockUI();return;}let pw=prompt("Enter password to access Vendor Master, Letter Summary & Language and Signature:");if(pw===null)return;if(pw!==state.appPassword){alert("Incorrect password.");return;}adminUnlocked=true;setAdminLockUI();};
+document.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
+$("letterType").onchange=()=>{reset();};$("vendor").onchange=updateAddress;$("addRow").onclick=()=>addRow();$("clearRows").onclick=()=>$("productBody").innerHTML="";$("previewBtn").onclick=preview;$("printBtn").onclick=()=>{preview();setTimeout(()=>print(),200)};$("resetBtn").onclick=reset;$("clearAllBtn").onclick=clearAllData;
+$("effectiveMonth").addEventListener("input",updateOpeningText);$("wording").addEventListener("change",updateOpeningText);
+$("calcUspBtn").onclick=calcUSP;
+document.querySelectorAll('input[name="uspOpt"]').forEach(r=>r.onchange=()=>{if(r.checked)state.uspRequired[$("letterType").value]=(r.value==="1");save();});
+$("massUploadBtn").onclick=()=>{$("massUploadHint").textContent=$("letterType").value==="R"?"One product per line. Columns separated by Tab (or comma): Product Name, Pack Size, Existing MRP, Revised MRP. U.S.P. is auto-calculated \u2014 use the Calculate USP button after import.":"One product per line. Columns separated by Tab (or comma): Product Name, Pack Size, MRP. U.S.P. is auto-calculated \u2014 use the Calculate USP button after import.";$("massUploadPanel").classList.remove("hidden");};
+$("massUploadCancel").onclick=()=>{$("massUploadPanel").classList.add("hidden");$("massUploadText").value="";};
+$("massUploadImport").onclick=()=>{let lines=$("massUploadText").value.split(/\r?\n/).map(l=>l.trim()).filter(l=>l!=="");if(!lines.length)return alert("Paste at least one product row.");if($("massReplace").checked)$("productBody").innerHTML="";let type=$("letterType").value,count=0;lines.forEach(line=>{let cols=(line.includes("\t")?line.split("\t"):line.split(",")).map(c=>c.trim());if(type==="R")addRow({name:cols[0]||"",pack:cols[1]||"",existing:cols[2]||"",revised:cols[3]||""});else addRow({name:cols[0]||"",pack:cols[1]||"",mrp:cols[2]||""});count++;});$("massUploadPanel").classList.add("hidden");$("massUploadText").value="";alert(count+" product row(s) imported. Click 'Calculate USP' to fill U.S.P. values.");};
+$("vendorMassBtn").onclick=()=>$("vendorMassPanel").classList.remove("hidden");
+$("vendorMassCancel").onclick=()=>{$("vendorMassPanel").classList.add("hidden");$("vendorMassText").value="";};
+$("vendorMassImport").onclick=()=>{let blocks=$("vendorMassText").value.split(/\r?\n\s*\r?\n/).map(b=>b.trim()).filter(b=>b!=="");if(!blocks.length)return alert("Paste at least one vendor block.");let count=0;blocks.forEach(b=>{let lines=b.split(/\r?\n/).map(l=>l.trim()).filter(l=>l!=="");if(!lines.length)return;let name=lines[0],address=lines.slice(1).join("\n");if(!name||!address)return;state.vendors.push({name,address});count++;});save();refreshVendors();$("vendorMassPanel").classList.add("hidden");$("vendorMassText").value="";alert(count+" vendor(s) imported.");};
+$("saveVendor").onclick=()=>{let n=$("newVendor").value.trim(),a=$("newAddress").value.trim();if(!n||!a)return alert("Enter vendor name and address.");state.vendors.push({name:n,address:a});save();$("newVendor").value="";$("newAddress").value="";refreshVendors();};
+$("saveMasters").onclick=()=>{state.signatory=$("signatory").value;state.appPassword=$("appPassword").value||"admin123";state.revisedText=$("revisedText").value;state.revisedImmediateText=$("revisedImmediateText").value;state.generalText=$("generalText").value;state.revisedNotes=$("revisedNotes").value;state.generalNotes=$("generalNotes").value;save();setupRows();alert("Masters saved.");};
+$("exportData").onclick=()=>{let blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="mrp-letter-backup.json";a.click();URL.revokeObjectURL(a.href)};
+$("importBtn").onclick=()=>$("importFile").click();$("importFile").onchange=e=>{let f=e.target.files[0];if(!f)return;let rd=new FileReader();rd.onload=()=>{try{state=JSON.parse(rd.result);if(!state.uspRequired)state.uspRequired={R:true,G:true};if(!state.revisedImmediateText)state.revisedImmediateText="Kindly find herewith the Revised Maximum Retail Price of the following product (s) with immediate effect as under:-";if(!state.appPassword)state.appPassword="admin123";if(state.logoDataUrl===undefined)state.logoDataUrl=null;save();refreshVendors();renderSummary();loadMasters();reset();alert("Data imported.");}catch(_){alert("Invalid backup file.");}};rd.readAsText(f)};
+function loadMasters(){$("signatory").value=state.signatory;$("appPassword").value=state.appPassword;$("revisedText").value=state.revisedText;$("revisedImmediateText").value=state.revisedImmediateText;$("generalText").value=state.generalText;$("revisedNotes").value=state.revisedNotes;$("generalNotes").value=state.generalNotes;syncLogoPreview();}
+function syncLogoPreview(){let img=$("logoPreviewImg");if(state.logoDataUrl){img.src=state.logoDataUrl;img.style.display="inline-block";}else{img.src="";img.style.display="none";}}
+$("logoUpload").onchange=e=>{let f=e.target.files[0];if(!f)return;if(f.size>800*1024){alert("Logo file is too large. Please use an image under 800 KB.");e.target.value="";return;}let rd=new FileReader();rd.onload=()=>{state.logoDataUrl=rd.result;save();syncLogoPreview();};rd.readAsDataURL(f);};
+$("removeLogo").onclick=()=>{state.logoDataUrl=null;save();syncLogoPreview();$("logoUpload").value="";};
+refreshVendors();loadMasters();reset();
+if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
+</script>
+</body></html>
